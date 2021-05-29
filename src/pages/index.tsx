@@ -1,40 +1,16 @@
 import { Button, Box } from '@chakra-ui/react';
-import { useMemo, useState } from 'react';
-import { useInfiniteQuery, UseInfiniteQueryResult } from 'react-query';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { useMemo } from 'react';
+import { useInfiniteQuery } from 'react-query';
+import Head from 'next/head';
 
-import { Header } from '../components/Header';
 import { CardList } from '../components/CardList';
-import { api } from '../services/api';
-import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
-
-interface ImagesQueryResponse {
-  after?: {
-    id: string;
-  };
-  data: {
-    data: {
-      title: string;
-      description: string;
-      url: string;
-    };
-    ts: number;
-    ref: {
-      id: string;
-    };
-  }[];
-}
-
-interface HomeProps {
-  pageParam: number;
-}
+import { Header } from '../components/Header';
+import { Loading } from '../components/Loading';
+import { api } from '../services/api';
 
 interface ImageData {
-  list: Image[];
-  after: string;
-}
-
-interface Image {
   title: string;
   description: string;
   url: string;
@@ -42,9 +18,23 @@ interface Image {
   id: string;
 }
 
-export default function Home({ pageParam = null }: HomeProps): JSX.Element {
+type InfiniteQueryResponse = {
+  after: number | null;
+  data: ImageData[];
+};
 
-  let lastResponse: ImagesQueryResponse;
+export default function Home(): JSX.Element {
+  // declaracao da funcao, definindo o tipo de retorno
+  const queryFn = async ({ pageParam = null }): Promise<InfiniteQueryResponse> => {
+    const { data } = await api.get('/api/images', {
+      // params contem a query string do GET
+      params: {
+        after: pageParam,
+      },
+    });
+    // nao esquecer de RETORNAR OS DADOS!!!!
+    return data;
+  };
 
   const {
     data,
@@ -53,54 +43,48 @@ export default function Home({ pageParam = null }: HomeProps): JSX.Element {
     isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
-    status,  // depois apaga e usa isError e isLoading - Clarinha
-  } = useInfiniteQuery(
+  } = useInfiniteQuery<unknown, unknown, InfiniteQueryResponse>(
     'images',
-    // TODO AXIOS REQUEST WITH PARAM
-    ({ pageParam = 0 }) =>
-      api.get('/api/images?after=' + pageParam)
-        .then(
-          (response) => {
-            console.log("retorno do axios: ", response.data);
-            lastResponse = response.data as ImagesQueryResponse;
-          })
-    ,
-    // TODO GET AND RETURN NEXT PAGE PARAM
+    queryFn,
     {
-      getNextPageParam: () => {
-        if (!lastResponse)
-          return null;
-        console.log("lastResponse= ", lastResponse);
-        const { after } = lastResponse;
-        console.log("after= ", after);
-        return after ?? null;
-      },
+      getNextPageParam: (data: InfiniteQueryResponse) => data.after,
     }
   );
 
   const formattedData = useMemo(() => {
-    // TODO FORMAT AND FLAT DATA ARRAY
-    console.log("dentro do useMemo: ", data);
-    return 0;
+    const flatData = data?.pages.map(page => page.data).flat();
+    if (data) {
+      console.log("data.pages: ", data.pages);
+      console.log("")
+    }
+    console.log("formattedData: ", flatData);
+    return flatData;
   }, [data]);
 
-  // TODO RENDER LOADING SCREEN
+  if (isLoading) return <Loading />;
 
-  // TODO RENDER ERROR SCREEN
+  if (isError) return <Error />;
 
-  return status === 'loading' ? (
-    <Loading />
-  ) : status === 'error' ? (
-    <Error />
-  ) :
-    (
-      <>
-        <Header />
+  return (
+    <>
+      <Head>
+        <title>UpFi</title>
+        <link rel="shortcut icon" href="logo.svg" />
+      </Head>
 
-        <Box maxW={1120} px={20} mx="auto" my={20}>
-          <CardList cards={formattedData} />
-          {/* TODO RENDER LOAD MORE BUTTON IF DATA HAS NEXT PAGE */}
-        </Box>
-      </>
-    );
+      <Header />
+
+      <Box maxW={1120} px={20} mx="auto" my={20}>
+        <CardList cards={formattedData} />
+
+        {hasNextPage && (
+
+          <Button mt={8} onClick={() => fetchNextPage()}>
+            {isFetchingNextPage ? 'Carregando' : 'Carregar mais'}
+          </Button>
+        )}
+
+      </Box>
+    </>
+  );
 }

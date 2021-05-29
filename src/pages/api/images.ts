@@ -49,10 +49,12 @@ export default async function handler(
     }
 
     if (req.method === 'GET') {
+        // parametro after vem da pagina Home, na query string
         const { after } = req.query;
 
         const queryOptions = {
             size: 6,
+            // acho q aqui so ta validando se o id realmente existe na base de dados
             ...(after && { after: query.Ref(query.Collection('images'), after) }),
         };
 
@@ -63,6 +65,7 @@ export default async function handler(
                         query.Documents(query.Collection('images')),
                         queryOptions
                     ),
+                    // nao entendi!!!!
                     query.Lambda('X', query.Get(query.Var('X')))
                 )
             )

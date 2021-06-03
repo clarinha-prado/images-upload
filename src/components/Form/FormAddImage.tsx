@@ -14,7 +14,8 @@ interface FormAddImageProps {
 interface FormData {
   title: string,
   description: string,
-  image: string
+  image: string,
+  url: string
 }
 
 export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
@@ -131,6 +132,9 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
           return;
         });
 
+      // antes de chamar o fauna, precisa incluir no FormData a url retornada pelo imgbb
+      data.url = imageUrl;
+
       // TODO EXECUTE ASYNC MUTATION
       mutation.mutateAsync(data)
         .then(() => {
@@ -165,6 +169,8 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
   return (
     <Box as="form" width="100%" onSubmit={handleSubmit(onSubmit)}>
       <Stack spacing={4}>
+        {/* este campo retorna o mesmo q o input file retorna, q é o FileList com o array de 
+        arquivos selecionados */}
         <FileInput
           setImageUrl={setImageUrl}
           localImageUrl={localImageUrl}

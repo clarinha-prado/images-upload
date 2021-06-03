@@ -113,7 +113,7 @@ const FileInputBase: ForwardRefRenderFunction<
         setError('image', null);
         setIsSending(true);
 
-        // chama qual função? se não foi passada a prop onChange na chamada do <FileInput>???
+        // chama qual função??? se não foi passada a prop onChange na chamada do <FileInput>???
         // só se esta linha for simplesmente aguardar o final da execução do evento onChange q seria
         // o upload do arquivo selecionado no diálogo do file input...
         await onChange(event);

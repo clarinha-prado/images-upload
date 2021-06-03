@@ -18,7 +18,13 @@ interface FormData {
 }
 
 export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
+
+  // const imageUrl: string
+  // const setImageUrl: Dispatch<SetStateAction<string>>
   const [imageUrl, setImageUrl] = useState('');
+
+  // const imageUrl: string
+  // const setLocalImageUrl: Dispatch<SetStateAction<string>>  
   const [localImageUrl, setLocalImageUrl] = useState('');
   const toast = useToast();
 
@@ -82,10 +88,12 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
 
   const queryClient = useQueryClient();
 
+  // save function declaration
   const saveData = async (formData: FormData) => {
     await api.post("/api/images", formData);
   }
 
+  // associates save function with mutation 'object'
   const mutation = useMutation(
     // TODO MUTATION API POST REQUEST,
     saveData,
@@ -103,6 +111,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
     reset,
     formState,
     setError,
+    // Manually triggers form or input validation
     trigger,
   } = useForm();
   const { errors } = formState;
@@ -110,22 +119,46 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
   const onSubmit = async (data: FormData): Promise<void> => {
     try {
       // TODO SHOW ERROR TOAST IF IMAGE URL DOES NOT EXISTS
-      async () => await fetch(data.image) || toast({
-        title: "Imagem não adicionada",
-        description: "É preciso adicionar e aguardar o upload de uma imagem antes de realizar o cadastro.",
+      async () => await fetch(data.image)
+        .catch(() => {
+          toast({
+            title: "Imagem não adicionada",
+            description: "É preciso adicionar e aguardar o upload de uma imagem antes de realizar o cadastro.",
+            status: "error",
+            duration: 9000,
+            isClosable: true,
+          });
+          return;
+        });
+
+      // TODO EXECUTE ASYNC MUTATION
+      mutation.mutateAsync(data)
+        .then(() => {
+          // TODO SHOW SUCCESS TOAST
+          toast({
+            title: "Imagem cadastrada",
+            description: "Sua imagem foi cadastrada com sucesso.",
+            status: "success",
+            duration: 9000,
+            isClosable: true,
+          });
+        });
+
+    } catch {
+      // TODO SHOW ERROR TOAST IF SUBMIT FAILED
+      toast({
+        title: "Falha no cadastro",
+        description: "Ocorreu um erro ao tentar cadastrar a sua imagem.",
         status: "error",
         duration: 9000,
         isClosable: true,
       });
-      return;
-
-
-      // TODO EXECUTE ASYNC MUTATION
-      // TODO SHOW SUCCESS TOAST
-    } catch {
-      // TODO SHOW ERROR TOAST IF SUBMIT FAILED
     } finally {
       // TODO CLEAN FORM, STATES AND CLOSE MODAL
+      reset();
+      setImageUrl("");
+      setLocalImageUrl("");
+      closeModal();
     }
   };
 
